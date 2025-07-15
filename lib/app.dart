@@ -32,4 +32,4 @@ class MainApp extends StatelessWidget {
   }
 }
 
-// ... Pantallas y widgets se implementarán aquí ...
+
