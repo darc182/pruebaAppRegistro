@@ -5,6 +5,20 @@
 ## Descripción
 Esta aplicación permite registrar y gestionar visitantes en una oficina de manera moderna y eficiente. Desarrollada en Flutter y usando Supabase como backend, es compatible tanto para web como para dispositivos móviles.
 
+## Capturas de pantalla
+
+### Login
+![Login](docs/login.png)
+
+### Lista de visitantes
+![Visitantes](docs/visitantes.png)
+
+### Usuarios en Supabase
+![Usuarios Supabase](docs/usuarios_supabase.png)
+
+### Tabla visitors en Supabase
+![Tabla visitors](docs/tabla_visitors.png)
+
 ## Funcionalidades principales
 - **Autenticación:** Registro e inicio de sesión con correo y contraseña usando Supabase Auth.
 - **Lista de visitantes:** Visualización en tiempo real de los visitantes registrados (nombre, motivo, hora y foto).
