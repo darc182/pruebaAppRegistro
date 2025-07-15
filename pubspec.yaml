@@ -9,6 +9,9 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  fluttertoast: ^8.2.12
+  image_picker: ^1.1.2
+  supabase_flutter: ^2.9.1
 
 dev_dependencies:
   flutter_test:
