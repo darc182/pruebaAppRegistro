@@ -49,41 +49,88 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFF4F6FB),
       appBar: AppBar(
         title: const Text('Visitantes'),
         backgroundColor: Colors.indigo,
+        elevation: 0,
+        centerTitle: true,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(bottom: Radius.circular(18)),
+        ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.logout),
+            icon: const Icon(Icons.logout, color: Colors.redAccent),
+            tooltip: 'Cerrar sesión',
             onPressed: _logout,
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: FloatingActionButton.extended(
         backgroundColor: Colors.indigo,
-        child: const Icon(Icons.add),
-        onPressed: () => Navigator.pushNamed(context, '/add'),
+        foregroundColor: Colors.white,
+        icon: const Icon(Icons.add),
+        label: const Text('Nuevo visitante'),
+        onPressed: () async {
+          final result = await Navigator.pushNamed(context, '/add');
+          if (result == true) {
+            _fetchVisitors();
+          }
+        },
       ),
-      body: loading
-          ? const Center(child: CircularProgressIndicator())
-          : visitors.isEmpty
-              ? const Center(child: Text('No hay visitantes registrados'))
-              : ListView.builder(
-                  itemCount: visitors.length,
-                  itemBuilder: (context, i) {
-                    final v = visitors[i];
-                    return Card(
-                      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      child: ListTile(
-                        leading: v['photo_url'] != null
-                            ? CircleAvatar(backgroundImage: NetworkImage(v['photo_url']))
-                            : const CircleAvatar(child: Icon(Icons.person)),
-                        title: Text(v['name'] ?? ''),
-                        subtitle: Text('${v['reason'] ?? ''}\n${v['created_at'] ?? ''}'),
-                      ),
-                    );
-                  },
-                ),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFFE3E8F7), Color(0xFFF4F6FB)],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: loading
+            ? const Center(child: CircularProgressIndicator())
+            : visitors.isEmpty
+                ? const Center(
+                    child: Text(
+                      'No hay visitantes registrados',
+                      style: TextStyle(fontSize: 18, color: Colors.indigo),
+                    ),
+                  )
+                : ListView.builder(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    itemCount: visitors.length,
+                    itemBuilder: (context, i) {
+                      final v = visitors[i];
+                      return Card(
+                        margin: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+                        elevation: 4,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        child: ListTile(
+                          leading: v['photo_url'] != null
+                              ? CircleAvatar(radius: 28, backgroundImage: NetworkImage(v['photo_url']))
+                              : const CircleAvatar(radius: 28, child: Icon(Icons.person, size: 28)),
+                          title: Text(
+                            v['name'] ?? '',
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.indigo),
+                          ),
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                v['reason'] ?? '',
+                                style: const TextStyle(fontSize: 15, color: Colors.black87),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                v['created_at'] != null ? v['created_at'].toString().replaceFirst('T', ' ').substring(0, 16) : '',
+                                style: const TextStyle(fontSize: 13, color: Colors.indigo),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+      ),
     );
   }
 }
@@ -116,11 +163,37 @@ class _AddVisitorScreenState extends State<AddVisitorScreen> {
         });
       }
     } else {
-      pickedFile = await picker.pickImage(source: ImageSource.camera);
-      if (pickedFile != null) {
-        setState(() {
-          _image = File(pickedFile!.path);
-        });
+      // Mostrar diálogo para elegir cámara o galería
+      final source = await showModalBottomSheet<ImageSource>(
+        context: context,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
+        ),
+        builder: (context) => SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.camera_alt, color: Colors.indigo),
+                title: const Text('Tomar foto'),
+                onTap: () => Navigator.pop(context, ImageSource.camera),
+              ),
+              ListTile(
+                leading: const Icon(Icons.photo_library, color: Colors.indigo),
+                title: const Text('Elegir de galería'),
+                onTap: () => Navigator.pop(context, ImageSource.gallery),
+              ),
+            ],
+          ),
+        ),
+      );
+      if (source != null) {
+        pickedFile = await picker.pickImage(source: source);
+        if (pickedFile != null) {
+          setState(() {
+            _image = File(pickedFile!.path);
+          });
+        }
       }
     }
   }
@@ -157,76 +230,143 @@ class _AddVisitorScreenState extends State<AddVisitorScreen> {
       'photo_url': photoUrl,
     });
     Fluttertoast.showToast(msg: 'Visitante registrado');
-    setState(() => _loading = false);
-    Navigator.pop(context);
+    _nameController.clear();
+    _reasonController.clear();
+    setState(() {
+      _selectedDate = null;
+      _image = null;
+      _webImageBytes = null;
+      _loading = false;
+    });
+    // Notificar a la pantalla anterior para que actualice la lista
+    Navigator.pop(context, true);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Agregar visitante'), backgroundColor: Colors.indigo),
+      backgroundColor: const Color(0xFFF4F6FB),
+      appBar: AppBar(
+        title: const Text('Agregar visitante'),
+        backgroundColor: Colors.indigo,
+        elevation: 0,
+        centerTitle: true,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(bottom: Radius.circular(18)),
+        ),
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            children: [
-              TextFormField(
-                controller: _nameController,
-                decoration: const InputDecoration(labelText: 'Nombre', border: OutlineInputBorder()),
-                validator: (v) => v != null && v.isNotEmpty ? null : 'Campo requerido',
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _reasonController,
-                decoration: const InputDecoration(labelText: 'Motivo', border: OutlineInputBorder()),
-                validator: (v) => v != null && v.isNotEmpty ? null : 'Campo requerido',
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(_selectedDate == null
-                        ? 'Selecciona la hora'
-                        : 'Hora: ${_selectedDate!.hour}:${_selectedDate!.minute}'),
-                  ),
-                  TextButton(
-                    child: const Text('Elegir hora'),
-                    onPressed: () async {
-                      final now = DateTime.now();
-                      final picked = await showTimePicker(
-                        context: context,
-                        initialTime: TimeOfDay(hour: now.hour, minute: now.minute),
-                      );
-                      if (picked != null) {
-                        setState(() {
-                          _selectedDate = DateTime(now.year, now.month, now.day, picked.hour, picked.minute);
-                        });
-                      }
-                    },
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              if (kIsWeb && _webImageBytes != null)
-                Image.memory(_webImageBytes!, height: 120)
-              else if (!kIsWeb && _image != null)
-                Image.file(_image!, height: 120)
-              else
-                TextButton.icon(
-                  icon: const Icon(Icons.camera_alt),
-                  label: const Text('Tomar foto'),
-                  onPressed: _pickImage,
-                ),
-              const SizedBox(height: 24),
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.indigo),
-                onPressed: _loading ? null : _saveVisitor,
-                child: _loading
-                    ? const CircularProgressIndicator(color: Colors.white)
-                    : const Text('Guardar'),
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(18),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.indigo.withOpacity(0.08),
+                blurRadius: 16,
+                offset: const Offset(0, 8),
               ),
             ],
+          ),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              children: [
+                TextFormField(
+                  controller: _nameController,
+                  decoration: InputDecoration(
+                    labelText: 'Nombre',
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    prefixIcon: const Icon(Icons.person_outline),
+                    filled: true,
+                    fillColor: Colors.indigo.withOpacity(0.04),
+                  ),
+                  validator: (v) => v != null && v.isNotEmpty ? null : 'Campo requerido',
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _reasonController,
+                  decoration: InputDecoration(
+                    labelText: 'Motivo',
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    prefixIcon: const Icon(Icons.info_outline),
+                    filled: true,
+                    fillColor: Colors.indigo.withOpacity(0.04),
+                  ),
+                  validator: (v) => v != null && v.isNotEmpty ? null : 'Campo requerido',
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        _selectedDate == null
+                            ? 'Selecciona la hora'
+                            : 'Hora: ${_selectedDate!.hour.toString().padLeft(2, '0')}:${_selectedDate!.minute.toString().padLeft(2, '0')}',
+                        style: const TextStyle(fontSize: 15, color: Colors.indigo),
+                      ),
+                    ),
+                    TextButton.icon(
+                      icon: const Icon(Icons.access_time, color: Colors.indigo),
+                      label: const Text('Elegir hora', style: TextStyle(color: Colors.indigo)),
+                      onPressed: () async {
+                        final now = DateTime.now();
+                        final picked = await showTimePicker(
+                          context: context,
+                          initialTime: TimeOfDay(hour: now.hour, minute: now.minute),
+                        );
+                        if (picked != null) {
+                          setState(() {
+                            _selectedDate = DateTime(now.year, now.month, now.day, picked.hour, picked.minute);
+                          });
+                        }
+                      },
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                if (kIsWeb && _webImageBytes != null)
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: Image.memory(_webImageBytes!, height: 120, fit: BoxFit.cover),
+                  )
+                else if (!kIsWeb && _image != null)
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: Image.file(_image!, height: 120, fit: BoxFit.cover),
+                  )
+                else
+                  TextButton.icon(
+                    icon: const Icon(Icons.camera_alt, color: Colors.indigo),
+                    label: const Text('Tomar foto', style: TextStyle(color: Colors.indigo)),
+                    onPressed: _pickImage,
+                  ),
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.indigo,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                      elevation: 2,
+                    ),
+                    onPressed: _loading ? null : _saveVisitor,
+                    child: _loading
+                        ? const SizedBox(
+                            height: 22,
+                            width: 22,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                          )
+                        : const Text('Guardar'),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
