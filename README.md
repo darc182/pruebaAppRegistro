@@ -8,16 +8,16 @@ Esta aplicación permite registrar y gestionar visitantes en una oficina de mane
 ## Capturas de pantalla
 
 ### Login
-![Login](docs/login.png)
+![Login](./login.png)
 
 ### Lista de visitantes
-![Visitantes](docs/visitantes.png)
+![Visitantes](./visitantes.png)
 
 ### Usuarios en Supabase
-![Usuarios Supabase](docs/usuarios_supabase.png)
+![Usuarios Supabase](./usuarios_supabase.png)
 
 ### Tabla visitors en Supabase
-![Tabla visitors](docs/tabla_visitors.png)
+![Tabla visitors](./tabla_visitors.png)
 
 ## Funcionalidades principales
 - **Autenticación:** Registro e inicio de sesión con correo y contraseña usando Supabase Auth.
